@@ -5,7 +5,4 @@ records = mycsv2mat(dircsv);
 
 load WAVEMAT
 
-for n=1:records
-    figure(n)
-    plot(T(n).data(:,1),T(n).data(:,2))
-end
+disp(['Total of ',num2str(records),' power traces read'])
