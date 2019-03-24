@@ -68,6 +68,17 @@ ins16start = Nindsorted(end-1,:);
 len16round = max(ins16end-ins16start);
 ins16end = ins16start + len16round;
 
+%% Prev round
+% 
+% ins16end = ins16start;
+% ins16start = ins16start - len16round;
+
+%% Next round
+% 
+% ins16start = ins16end;
+% ins16end = ins16start + len16round;
+
+%%
 Time16round = Time(ins16start:ins16end,:);
 PT16round = PT(ins16start:ins16end,:);
 

@@ -31,7 +31,7 @@ function [result] = get_lr_hamming_distance(filename)
   % Run everything through reverse of the final permutation % 
   for i = 1:1000
   	unpermuted_c(i, :) = FP_R(C(i, :));
-    input_r(i, :) = HALF_L(unpermuted_c(i, :));
+%     input_r(i, :) = HALF_L(unpermuted_c(i, :));
   end
     % Debug prints
     %permuted = C(1000, :)
@@ -43,7 +43,10 @@ function [result] = get_lr_hamming_distance(filename)
 
   % Now we can find the hamming distance between this right 32 bits and the 
   % 32 bits on the right from the final crypt
-  distances = pdist2(input_r, C(:, 1:32), 'hamming');
+%   distances = pdist2(input_r, C(:, 1:32), 'hamming');
+  distances = sum(xor(unpermuted_c, C)')';
+%   distances = sum(xor(input_r, C(:,33:end))')';
+
   result = distances;
 
-endfunction
+end
