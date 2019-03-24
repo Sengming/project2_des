@@ -23,5 +23,5 @@ T=T(i);
 
 delete WAVEMAT.mat
 
-save WAVEMAT T
+save WAVEMAT T records
 end
