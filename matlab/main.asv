@@ -1,0 +1,52 @@
+%% init
+clear; close all; clc;
+
+%% read CSVs
+dircsv = '../CSV';
+records = mycsv2mat(dircsv);
+
+%% DEMO MAs
+
+load WAVEMAT
+
+disp(['Total of ',num2str(records),' power traces read'])
+n=2;
+mean = sum(T(n).data(:,2)) / length(T(n).data(:,2));
+close all;
+plot(T(n).data(:,1),T(n).data(:,2)-mean,'r'); hold on
+
+[SMA,err] = sma(T(n).data(:,2)-mean,10);
+plot(T(n).data(length(T(n).data(:,2)) - length(SMA)+1:end,1),SMA','g')
+
+
+[EMA50,err] = ema(T(n).data(:,2)-mean,50);
+plot(T(n).data(length(T(n).data(:,2)) - length(EMA50)+1:end,1),EMA50','b')
+
+[EMA100,err] = ema(T(n).data(:,2)-mean,100);
+plot(T(n).data(length(T(n).data(:,2)) - length(EMA100)+1:end,1),EMA100','k')
+
+legend('Power Trace','SMA','EMA50','EMA100')
+% legend('Power Trace','EMA50','EMA100')
+
+%% Find MAs
+
+LL = [T.data];
+Time = [LL(:,1:2:2*records)];
+PT = [LL(:,2:2:2*records)];
+
+SMA_PT = sma(PT,10);
+EMA50_PT = ema(PT,50);
+EMA100_PT = ema(PT,100);
+
+[MP,MPI] = max(SMA_PT(2000:end,:));
+figure; hist(MPI+1999)
+
+DEMA =( EMA50_PT(1+end-length(EMA100_PT(:,1)):end,:)-EMA100_PT)>0;
+tmp = size(LL);
+nSamples = tmp(1);
+DEMA = [false(nSamples-length(EMA100_PT(:,1)),records);DEMA];
+M=tril(ones(nSamples),1) .* triu(ones(nSamples));
+M = [M.*1,zeros(nSamples,1)];
+M(nSamples,nSamples)=1;
+
+
