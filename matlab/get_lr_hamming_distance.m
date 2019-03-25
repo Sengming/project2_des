@@ -1,4 +1,4 @@
-function [result] = get_lr_hamming_distance(filename)
+function [result] = get_lr_hamming_distance()
 % This function gets the hamming distances at the 16th round LR register update
 % and outputs them as a vector of size nT (number of traces).
 % Input expected is the csv file we're getting the plaintext and ciphertext
@@ -44,8 +44,8 @@ function [result] = get_lr_hamming_distance(filename)
   % Now we can find the hamming distance between this right 32 bits and the 
   % 32 bits on the right from the final crypt
 %   distances = pdist2(input_r, C(:, 1:32), 'hamming');
-  distances = sum(xor(unpermuted_c, C)')';
-%   distances = sum(xor(input_r, C(:,33:end))')';
+%  distances = sum(xor(unpermuted_c, C)')';
+   distances = sum(xor(input_r, C(:,33:end))')';
 
   result = distances;
 
