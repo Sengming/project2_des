@@ -31,7 +31,7 @@ function [result] = get_lr_hamming_distance()
   % Run everything through reverse of the final permutation % 
   for i = 1:1000
   	unpermuted_c(i, :) = FP_R(C(i, :));
-%     input_r(i, :) = HALF_L(unpermuted_c(i, :));
+    input_r(i, :) = HALF_R(unpermuted_c(i, :));
   end
     % Debug prints
     %permuted = C(1000, :)
