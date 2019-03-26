@@ -82,7 +82,7 @@ switch nargin
     case 3 
         if isempty(setdiff(unique(key),[0,1])) % check provided key type
             if numel(key) == 64  % check provided key parity
-                keyParityCheck = @(k) (sum(mod(sum(reshape(k,8,8)),2))==0);
+                keyParityCheck = @(k) (sum(  mod(   sum( reshape(k,8,8) ),  2)  )==8);
                 if keyParityCheck(key) == 1
                     K = key(:)';
                 else
@@ -241,18 +241,18 @@ for i = 1:16
         case 'DEC' % if decryption, apply sub-keys in the reverse order
             mixed_R = KM(expended_R,subKeys(16-i+1,:)); % mixed with sub-key: 48-bit
      end
-     mixed_R
-     substituted_R = SBOX(mixed_R) % substitution: 48-bit to 32-bit
+     substituted_R = SBOX(mixed_R); % substitution: 48-bit to 32-bit
      permuted_R = PBOX(reshape(substituted_R',1,32)); % permutation: 32-bit
      R{i+1} = xor(L{i},permuted_R); % Feistel function: 32-bit
 end
 % 3.3 final permutation
-switch mode
-    case 'ENC'
-        C = [L{end},R{end}]; 
-    case 'DEC'
-        C = [R{end},L{end}];
-end
+% switch mode
+%     case 'ENC'
+%         C = [L{end},R{end}]; 
+%     case 'DEC'
+%         C = [R{end},L{end}];
+% end
+C = [R{end},L{end}];
 output64 = FP(C);
 varargout{1} = output64;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
