@@ -26,10 +26,10 @@ function [result] = get_lr_hamming_distance()
   % a = strings of plaintext%
   load pairs
  
-  unpermuted_c = zeros(10000, 64);
-  input_r = zeros(10000, 32);
+  unpermuted_c = zeros(1000, 64);
+  input_r = zeros(1000, 32);
   % Run everything through reverse of the final permutation % 
-  for i = 1:10000
+  for i = 1:1000
   	unpermuted_c(i, :) = FP_R(C(i, :));
     input_r(i, :) = HALF_R(unpermuted_c(i, :));
   end

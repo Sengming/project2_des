@@ -15,7 +15,7 @@ size(hamming_power_mapping)
 for i = 1:32
   hd_average_map(i, 1) = i;
   bucket_count = 0;
-  for j = 1:10000
+  for j = 1:1000
     if hamming_power_mapping(j, 1) == i
         hd_average_map(i, 2) = hd_average_map(i, 2) + hamming_power_mapping(j, 2);
         bucket_count = bucket_count + 1;
