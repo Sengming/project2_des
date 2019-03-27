@@ -27,6 +27,11 @@ function [result] = get_guess_lr_hamming_distance()
                                     2  8 24 14  32 27  3  9 ...
                                    19 13 30  6  22 11  4  25]);
 
+  PBOX_R = @(halfMessage) halfMessage([9 17 23 31 13 28 2 18 ...
+                                      24 16 30 6 26 20 10 1 ...
+                                      8 14 25 3 4 29 11 19 ...
+                                      32 12 22 7 5 27 15 21]); 
+
                                    % 1.4 define eight substitution tables
 % input: 0	1   2   3   4   5   6   7   8   9   10  11  12  13  14  15
 st{1} = [14	4	13	1	2	15	11	8	3	10	6	12	5	9	0	7;...
@@ -133,15 +138,31 @@ SUBS = @(expandedHalfMessage,blkNo) ST{blkNo}{bi2de(expandedHalfMessage(1, [1,6]
         sbox_guessed_outputs(i, :) = SUBS(sbox_guessed_inputs(i, :),1);
     end
 
-    sbox_guessed_outputs
+    %sbox_guessed_outputs
     % Use PBOX here
+    % What we need to do next is find out where the 4 bits go to after the PBOX, set them in a 32 bit register initialized with all 
+    % 0's then pushing it through the P-BOX. Finally, put that through the final permutation. The 4 bit location mapping (not value)
+    % will then be compared with the corresponding 4 bits from the input_r. Mask the input_r and then perform hamming distance.
+   
+    % There is an easy way of doing this. We can run the input_r BACKWARDS through the pbox and just take the values of the
+    % first four bit (for sbox 1) and do the hamming distance between that and our sbox_guessed outputs. The reason
+    % we can do this is because hamming distance doesn't care about the location of the bits, as long as they're compared
+    % to the correct bit. 
+    
+    % Apply Reverse PBOX to the input r:
+    unpboxed_input_r = PBOX_R(input_r(1, :));
 
-  % Now we can find the hamming distance between this right 32 bits and the 
-  % 32 bits on the right from the final crypt
-%   distances = pdist2(input_r, C(:, 1:32), 'hamming');
-%  distances = sum(xor(unpermuted_c, C)')';
-   distances = sum(xor(input_r, C(:,33:end))')';
+    % Take the first 4 bits for sbox1
+    unpboxed_input_r_sbox1 = unpboxed_input_r(1, 1:4);
 
-  result = distances;
+    % duplicate it 64 times for each of the guesses so we can xor the two matrices:
+    unpboxed_input_r_64 = repmat(unpboxed_input_r_sbox1, 64, 1);
+    
+    % For sbox1, take the first 4 bits and find the hamming distance between that and the sbox_guessed_outputs
+    sbox1_guess_distances = sum(xor(unpboxed_input_r_64, sbox_guessed_outputs)')';
+
+    % Now we have an array of 64x1 for hamming weight guesses
+
+    result = sbox1_guess_distances;
 
 end
