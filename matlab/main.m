@@ -57,8 +57,10 @@ legend('Power Trace','SMA','EMA50','EMA100','trig')
 
 figure; hist(MPI)
 
+save MAs SMA_PT EMA50_PT EMA100_PT PT
+
 Nind = (N'*diag( 1:nSamples))';
-Nind = Nind(1:min(MPI),:);
+Nind = Nind(1:mode(MPI),:);
 
 Nindsorted = sort(Nind);
 
@@ -81,17 +83,20 @@ ins16end = ins16start + len16round;
 %%
 Time16round = Time(ins16start:ins16end,:);
 PT16round = PT(ins16start:ins16end,:);
+SMA_PT16round = SMA_PT(ins16start:ins16end,:);
+
+[M,C] = text2binary(T);
 
 %%
 clear n
-n=randi(1000,1,10);
-for i=1:10
+n=[randi(records,1,10),find(MPI==2819)];
+for i=1:length(n)
 figure;
 plot(T(n(i)).data(:,1),T(n(i)).data(:,2),'r'); hold on
 plot(Time16round(:,n(i)),PT16round(:,n(i)),'g.');
 end
 
-save Round16 Time16round PT16round T
+save Round16 Time16round PT16round T SMA_PT16round
 
-clear
+% clear
 

@@ -22,7 +22,7 @@ function [result] = get_guess_lr_hamming_distance()
   HALF_L = @(message) message(1:32);
   HALF_R = @(message) message(33:64);
   EF = @(halfMessage) [halfMessage([32,4:4:28])',(reshape(halfMessage,4,8))',halfMessage([5:4:29,1])'];
-  PBOX = @(halfMessage) halfMessage([16  7 20 21  29 12 28 17 ... 
+  PBOX = @(halfMessage) halfMessage(:,[16  7 20 21  29 12 28 17 ... 
                                     1 15 23 26   5 18 31 10 ...
                                     2  8 24 14  32 27  3  9 ...
                                    19 13 30  6  22 11  4  25]);
@@ -31,6 +31,15 @@ function [result] = get_guess_lr_hamming_distance()
                                       24 16 30 6 26 20 10 1 ...
                                       8 14 25 3 4 29 11 19 ...
                                       32 12 22 7 5 27 15 21]); 
+                                  
+  FP = @(message) message(:, [40	8	48	16	56	24	64	32 ...
+                        39	7	47	15	55	23	63	31 ...
+                        38	6	46	14	54	22	62	30 ...
+                        37	5	45	13	53	21	61	29 ...
+                        36	4	44	12	52	20	60	28 ...
+                        35	3	43	11	51	19	59	27 ...
+                        34	2	42	10	50	18	58	26 ...
+                        33	1	41	9	49	17	57	25]);
 
                                    % 1.4 define eight substitution tables
 % input: 0	1   2   3   4   5   6   7   8   9   10  11  12  13  14  15
@@ -68,16 +77,18 @@ st{8} = [13	2	8	4	6	15	11	1	10	9	3	14	5	0	12	7;...
 		2	1	14	7	4	10	8	13	15	12	9	0	3	5	6	11];
 % the eight binary s-boxes
 for i = 1:8
-    %ST{i} = mat2cell(blkproc(st{i},[1,1],@(x) de2bi(x,4,'left-msb')),ones(1,4),ones(1,16)*4);
-    ST{i} = mat2cell(blockproc(st{i},[1,1],@(x) de2bi(x,4,'left-msb')),ones(1,4),ones(1,16)*4);
+    ST{i} = mat2cell(blkproc(st{i},[1,1],@(x) de2bi(x,4,'left-msb')),ones(1,4),ones(1,16)*4);
+    %ST{i} = mat2cell(blockproc(st{i},[1,1],@(x) de2bi(x,4,'left-msb')),ones(1,4),ones(1,16)*4);
 end
 % 1.5 define subsitution function (SBOX)
 SUBS = @(expandedHalfMessage,blkNo) ST{blkNo}{bi2de(expandedHalfMessage(1, [1,6]),'left-msb')+1,bi2de(expandedHalfMessage(1,[2:5]),'left-msb')+1};
  
   % Load in M = plaintext mssages in bits, C = encrypted messages in bits, 
   % a = strings of plaintext%
+%%
   load pairs
  
+%%
   unpermuted_c = zeros(1000, 64);
   input_r = zeros(1000, 32);
   % Run everything through reverse of the final permutation % 
@@ -132,9 +143,11 @@ SUBS = @(expandedHalfMessage,blkNo) ST{blkNo}{bi2de(expandedHalfMessage(1, [1,6]
     % XOR these guesses with the first 6 bits from plaintext to get our final sbox inputs
 
     % This part is done for one sbox, one trace.
-    sbox_guessed_inputs = zeros(64, 6);
+%     sbox_guessed_inputs = zeros(64, 6);
+
+for m = 1:length(sbox1_plaintext)
     for i = 1:64
-        sbox_guessed_inputs(i, :) = xor(sbox1_plaintext(1,:), sbox_keyguess(i, :));
+        sbox_guessed_inputs(i, :) = xor(sbox1_plaintext(m,:), sbox_keyguess(i, :));
         sbox_guessed_outputs(i, :) = SUBS(sbox_guessed_inputs(i, :),1);
     end
 
@@ -150,19 +163,28 @@ SUBS = @(expandedHalfMessage,blkNo) ST{blkNo}{bi2de(expandedHalfMessage(1, [1,6]
     % to the correct bit. 
     
     % Apply Reverse PBOX to the input r:
-    unpboxed_input_r = PBOX_R(input_r(1, :));
-
-    % Take the first 4 bits for sbox1
-    unpboxed_input_r_sbox1 = unpboxed_input_r(1, 1:4);
-
-    % duplicate it 64 times for each of the guesses so we can xor the two matrices:
-    unpboxed_input_r_64 = repmat(unpboxed_input_r_sbox1, 64, 1);
-    
-    % For sbox1, take the first 4 bits and find the hamming distance between that and the sbox_guessed_outputs
-    sbox1_guess_distances = sum(xor(unpboxed_input_r_64, sbox_guessed_outputs)')';
+%     unpboxed_input_r = PBOX_R(input_r(1, :));
+% 
+%     % Take the first 4 bits for sbox1
+%     unpboxed_input_r_sbox1 = unpboxed_input_r(1, 1:4);
+% 
+%     % duplicate it 64 times for each of the guesses so we can xor the two matrices:
+%     unpboxed_input_r_64 = repmat(unpboxed_input_r_sbox1, 64, 1);
+%     
+%     % For sbox1, take the first 4 bits and find the hamming distance between that and the sbox_guessed_outputs
+%     sbox1_guess_distances = sum(xor(unpboxed_input_r_64, sbox_guessed_outputs)')';
 
     % Now we have an array of 64x1 for hamming weight guesses
-
-    result = sbox1_guess_distances;
+    input_P = [sbox_guessed_outputs zeros(64, 28)];
+%     input_P = [ones(64,4) zeros(64,28)];
+    FP_INPUT = [PBOX(input_P) zeros(64, 32)];
+    Cypherguesss = FP(FP_INPUT);
+    Bitposaffected = [60 62];
+    input_r_repeate64 = ones(64,2)*diag([input_r(m,Bitposaffected-32)]);
+    Cypherguesss2 = Cypherguesss(:,Bitposaffected);
+    HD1SBOX(m,:)  = sum(xor(input_r_repeate64,Cypherguesss(:,Bitposaffected))');
+    m
+end 
+    result = HD1SBOX;
 
 end
