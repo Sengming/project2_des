@@ -86,7 +86,7 @@ SUBS = @(expandedHalfMessage,blkNo) ST{blkNo}{bi2de(expandedHalfMessage(1, [1,6]
   % Load in M = plaintext mssages in bits, C = encrypted messages in bits, 
   % a = strings of plaintext%
 %%
-  load pairs
+  load pairs.mat
  
 %%
   unpermuted_c = zeros(1000, 64);
@@ -124,7 +124,9 @@ SUBS = @(expandedHalfMessage,blkNo) ST{blkNo}{bi2de(expandedHalfMessage(1, [1,6]
     % First ,we need to figure out the first Sbox's output bits by moving cryptext backwards through the FP and feistel
     unpermuted_c_l = unpermuted_c(:, 1:32);
     unpermuted_c_r = unpermuted_c(:, 33:64);
-    unpermuted_c_r_hamming_bits = unpermuted_c_r([32,1,2,3,4,5]);
+    c_right = C(:, 33:64);
+    c_right_hamming_bits = c_right(:, [32 1 2 3 4 5]);
+
     before_dbox = PBOX_R(unpermuted_c_l);
 
     sbox1_outputs = before_dbox(:, 1:4);
@@ -144,7 +146,8 @@ SUBS = @(expandedHalfMessage,blkNo) ST{blkNo}{bi2de(expandedHalfMessage(1, [1,6]
     sbox_keyguess = linspace(0, 63, 64);
     sbox_keyguess = dec2bin(sbox_keyguess(1,:)) - '0';
 
-    hamming_distances = zeros(256, 1, 1000);
+    %hamming_distances = zeros(256, 1, 1000);
+    hamming_distances = zeros(256, 1000);
 
     possible_sbox_plaintexts = zeros(256, 6, 1000);
 
@@ -153,12 +156,14 @@ SUBS = @(expandedHalfMessage,blkNo) ST{blkNo}{bi2de(expandedHalfMessage(1, [1,6]
         for j = 1:4
            for k = 1:64
                possible_sbox_plaintexts(k+((j-1)*64), :, i) = xor(possible_sbox_inputs(j, :, i), sbox_keyguess(k, :));
-               hamming_distances(k+((j-1)*64), :, i)  = sum(xor(unpermuted_c_r_hamming_bits, possible_sbox_plaintexts(k+((j-1)*64), :, i))')';
+               hamming_distances(k+((j-1)*64), i)  = sum(xor(c_right_hamming_bits(i, :), possible_sbox_plaintexts(k+((j-1)*64), :, i))')';
            end
         end
     end
 
-    result = hamming_distances;
+    hamming = hamming_distances';
+    save guess.mat hamming
+    result = hamming_distances';
 
 %    % At this point we have our plaintext inputs to the sbox. The next step is to generate the s-box input keyguesses
 %    % sbox guesses are 64x6 in size. From this point on we are only targeting sbox 1, replicate later.

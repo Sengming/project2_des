@@ -10,7 +10,7 @@
 % We have guesses for the content of the register at the initial and final
 % states that we wish to verity using CPA
 clear; close all; clc;
-load toCPA
+%load toCPA
 load MAs
 % number of traces: each sample point corresponds to register update
 nT = 10000; %num of traces
@@ -19,32 +19,32 @@ lT = 157; %length of trace (lT register writes)
 % correct hamming distances: trace-by-sample point
 % HD = hamming'; %registers are 8-bit => 8
 
-% power consumed in register updates: trace-by-sample point
-P = PT';
-
-figure;plot(P(1,:))
-xlabel('sample point');ylabel('Power consumed [W]');title('Power Trace of Device Updating Register (each sample point corresponds to an update)')
-figure;plot(HD(1,:));
-xlabel('sample point');ylabel('Hamming distance');title('Hamming Distance for Device Updating Register (each sample point corresponds to an update)')
-
-
-%%
-% Let's assume that we have a correct guess for a single register update 
-% for each trace but don't know where it's located in the trace; find it
-spg = 1; %sample point of correct guess in each trace
-G = HD'; %our guess
-
-% do correlation across every sample point of every trace
-Gcorr = corr(G,P);
-% plot correlation
-figure;plot(Gcorr);title('correct guess');xlabel('sample point');ylabel('correlation');
-[~,I] = max(Gcorr); %sample point with max correlation
-
-if I == spg
-    disp('unknown location, correct guess: guess verified');
-else
-    disp('cpa failure');
-end
+%% power consumed in register updates: trace-by-sample point
+%P = PT';
+%
+%figure;plot(P(1,:))
+%xlabel('sample point');ylabel('Power consumed [W]');title('Power Trace of Device Updating Register (each sample point corresponds to an update)')
+%figure;plot(HD(1,:));
+%xlabel('sample point');ylabel('Hamming distance');title('Hamming Distance for Device Updating Register (each sample point corresponds to an update)')
+%
+%
+%%%
+%% Let's assume that we have a correct guess for a single register update 
+%% for each trace but don't know where it's located in the trace; find it
+%spg = 1; %sample point of correct guess in each trace
+%G = HD'; %our guess
+%
+%% do correlation across every sample point of every trace
+%Gcorr = corr(G,P);
+%% plot correlation
+%figure;plot(Gcorr);title('correct guess');xlabel('sample point');ylabel('correlation');
+%[~,I] = max(Gcorr); %sample point with max correlation
+%
+%if I == spg
+%    disp('unknown location, correct guess: guess verified');
+%else
+%    disp('cpa failure');
+%end
 
 %%
 % What if our guess is incorrect?
@@ -85,8 +85,9 @@ end
 % Now we only have a range of possible sample points; use same guesses as
 % last time
 spg = 3083; %range around correct location (+/-)
-spF = spg-10; spL = spg+10; %look to verify guess in this range
+spF = spg-30; spL = spg+30; %look to verify guess in this range
 load guess
+
 Gcorr = corr(hamming,PT(1:1000,spF:spL));
 
 figure;plot(Gcorr);title('2^8 guesses, one correct; only have range for correct sample point');xlabel('guess');ylabel('correlation');
