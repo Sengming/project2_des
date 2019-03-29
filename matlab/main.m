@@ -61,6 +61,8 @@ close all;
 
 %% calling CPA to find the 6 bits of round16 key
 
+disp('Getting key for 1st SBOX in round 16 ...')
+
 [result, L15s] = get_guess_lr_hamming_distance2(C,M);
 
 P = PT(Ind_sample-5:Ind_sample+5,:)';
@@ -69,6 +71,9 @@ HD = result;
 
 Gcorr_sol=corr(HD,P);
 figure; plot(sum(Gcorr_sol,2)./10)
+savefig('./results/Corr_SBOX1.fig')
+saveas(gcf,'./results/Corr_SBOX1.pdf')
+
 
 
 
