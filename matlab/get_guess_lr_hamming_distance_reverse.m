@@ -1,4 +1,4 @@
-function [result] = get_guess_lr_hamming_distance()
+function [result] = get_guess_lr_reverse_hamming_distance()
 % This function gets the hamming distances at the 16th round LR register update
 % and outputs them as a vector of size nT (number of traces).
 % Input expected is the csv file we're getting the plaintext and ciphertext
@@ -27,7 +27,7 @@ function [result] = get_guess_lr_hamming_distance()
                                     2  8 24 14  32 27  3  9 ...
                                    19 13 30  6  22 11  4  25]);
 
-  PBOX_R = @(halfMessage) halfMessage(:, [9 17 23 31 13 28 2 18 ...
+  PBOX_R = @(halfMessage) halfMessage(:,[9 17 23 31 13 28 2 18 ...
                                       24 16 30 6 26 20 10 1 ...
                                       8 14 25 3 4 29 11 19 ...
                                       32 12 22 7 5 27 15 21]); 
@@ -86,16 +86,14 @@ SUBS = @(expandedHalfMessage,blkNo) ST{blkNo}{bi2de(expandedHalfMessage(1, [1,6]
   % Load in M = plaintext mssages in bits, C = encrypted messages in bits, 
   % a = strings of plaintext%
 %%
-  load pairs
+  load pairs.mat
  
 %%
   unpermuted_c = zeros(1000, 64);
   input_r = zeros(1000, 32);
-  L_16 = zeros(1000, 32);
   % Run everything through reverse of the final permutation % 
   for i = 1:1000
   	unpermuted_c(i, :) = FP_R(C(i, :));
-    L_16(i, :) = HALF_L(unpermuted_c(i, :));
     input_r(i, :) = HALF_R(unpermuted_c(i, :));
   end
     % Debug prints
@@ -118,92 +116,84 @@ SUBS = @(expandedHalfMessage,blkNo) ST{blkNo}{bi2de(expandedHalfMessage(1, [1,6]
     sbox7_plaintext = zeros(1000, 6);
     sbox8_plaintext = zeros(1000, 6);
 
-    % Fill up each sbox plaintext input from the expanded input.
-    for i = 1:1000
-        expanded_input_r = EF(input_r(i, :));
-        sbox1_plaintext(i, :) = expanded_input_r(1, :);
-        sbox2_plaintext(i, :) = expanded_input_r(2, :);
-        sbox3_plaintext(i, :) = expanded_input_r(3, :);
-        sbox4_plaintext(i, :) = expanded_input_r(4, :);
-        sbox5_plaintext(i, :) = expanded_input_r(5, :);
-        sbox6_plaintext(i, :) = expanded_input_r(6, :);
-        sbox7_plaintext(i, :) = expanded_input_r(7, :);
-        sbox8_plaintext(i, :) = expanded_input_r(8, :);
-    end
-
     % More debug prints.
     %sbox1_plaintext
     %size(expanded_input_r);
     %expanded_input_r;
 
-    % At this point we have our plaintext inputs to the sbox. The next step is to generate the s-box input keyguesses
-    % sbox guesses are 64x6 in size. From this point on we are only targeting sbox 1, replicate later.
+    % First ,we need to figure out the first Sbox's output bits by moving cryptext backwards through the FP and feistel
+    unpermuted_c_l = unpermuted_c(:, 1:32);
+    unpermuted_c_r = unpermuted_c(:, 33:64);
+    c_right = C(:, 33:64);
+    c_right_hamming_bits = c_right(:, [32 1 2 3 4 5]);
+
+    before_dbox = PBOX_R(unpermuted_c_l);
+
+    sbox1_outputs = before_dbox(:, 1:4);
+
+    possible_sbox_inputs = zeros(4,6,length(sbox1_plaintext));
+    for i = 1:length(sbox1_plaintext)
+        sbox1_lookups(i, :) = bi2de(sbox1_outputs(i, :), 'left-msb');
+        [sbox_row, sbox_column] = find(st{1}==sbox1_lookups(i,:));
+
+        sbox_row = sbox_row - 1;
+        sbox_column = sbox_column - 1;
+        binary_rows = de2bi(sbox_row, 2,'left-msb');
+        binary_columns = de2bi(sbox_column, 4,'left-msb');
+        possible_sbox_inputs(:,:,i) = [binary_rows(:, 1) binary_columns(:,:) binary_rows(:,2)];
+    end
+    %possible_sbox_inputs is goign to be 4x6x1000
     sbox_keyguess = linspace(0, 63, 64);
     sbox_keyguess = dec2bin(sbox_keyguess(1,:)) - '0';
-    %size(sbox_keyguess)
-    %size(sbox1_plaintext(1,:))
-    % XOR these guesses with the first 6 bits from plaintext to get our final sbox inputs
 
-    % This part is done for one sbox, one trace.
-%     sbox_guessed_inputs = zeros(64, 6);
-    HD1SBOX = zeros(1000, 64);
-    L_15_guesses_for_interesting_bits = zeros(64, 4);
-for m = 1:length(sbox1_plaintext)
-%for m = 1:1
-    for i = 1:64
-        sbox_guessed_inputs(i, :) = xor(sbox1_plaintext(m,:), sbox_keyguess(i, :));
-        sbox_guessed_outputs(i, :) = SUBS(sbox_guessed_inputs(i, :),1);
-    end
-    if m == 1
-        sbox_keyguess(61, :)
-    end
-    %sbox_guessed_outputs
-    % Use PBOX here
-    % What we need to do next is find out where the 4 bits go to after the PBOX, set them in a 32 bit register initialized with all 
-    % 0's then pushing it through the P-BOX. Finally, put that through the final permutation. The 4 bit location mapping (not value)
-    % will then be compared with the corresponding 4 bits from the input_r. Mask the input_r and then perform hamming distance.
-   
-    % There is an easy way of doing this. We can run the input_r BACKWARDS through the pbox and just take the values of the
-    % first four bit (for sbox 1) and do the hamming distance between that and our sbox_guessed outputs. The reason
-    % we can do this is because hamming distance doesn't care about the location of the bits, as long as they're compared
-    % to the correct bit. 
-    
-    % Apply Reverse PBOX to the input r:
-%     unpboxed_input_r = PBOX_R(input_r(1, :));
-% 
-%     % Take the first 4 bits for sbox1
-%     unpboxed_input_r_sbox1 = unpboxed_input_r(1, 1:4);
-% 
-%     % duplicate it 64 times for each of the guesses so we can xor the two matrices:
-%     unpboxed_input_r_64 = repmat(unpboxed_input_r_sbox1, 64, 1);
-%     
-%     % For sbox1, take the first 4 bits and find the hamming distance between that and the sbox_guessed_outputs
-%     sbox1_guess_distances = sum(xor(unpboxed_input_r_64, sbox_guessed_outputs)')';
+    %hamming_distances = zeros(256, 1, 1000);
+    hamming_distances = zeros(256, 1000);
 
+    possible_sbox_plaintexts = zeros(256, 6, 1000);
+
+    % xor operations backwards are xors
+    for i = 1:length(sbox1_plaintext)
+        for j = 1:4
+           for k = 1:64
+               possible_sbox_plaintexts(k+((j-1)*64), :, i) = xor(possible_sbox_inputs(j, :, i), sbox_keyguess(k, :));
+               hamming_distances(k+((j-1)*64), i)  = sum(xor(c_right_hamming_bits(i, :), possible_sbox_plaintexts(k+((j-1)*64), :, i))')';
+           end
+        end
+    end
+
+    hamming = hamming_distances';
+    save guess.mat hamming
+    result = hamming_distances';
+
+%    % At this point we have our plaintext inputs to the sbox. The next step is to generate the s-box input keyguesses
+%    % sbox guesses are 64x6 in size. From this point on we are only targeting sbox 1, replicate later.
+%    sbox_keyguess = linspace(0, 63, 64);
+%    sbox_keyguess = dec2bin(sbox_keyguess(1,:)) - '0';
+%    %size(sbox_keyguess)
+%    %size(sbox1_plaintext(1,:))
+%    % XOR these guesses with the first 6 bits from plaintext to get our final sbox inputs
+%
+%    % This part is done for one sbox, one trace.
+%%     sbox_guessed_inputs = zeros(64, 6);
+%
+%for m = 1:length(sbox1_plaintext)
+%    for i = 1:64
+%        sbox_guessed_inputs(i, :) = xor(sbox1_plaintext(m,:), sbox_keyguess(i, :));
+%        sbox_guessed_outputs(i, :) = SUBS(sbox_guessed_inputs(i, :),1);
+%    end
+%
+%
 %    % Now we have an array of 64x1 for hamming weight guesses
 %    input_P = [sbox_guessed_outputs zeros(64, 28)];
-%    % Get the feistel output bits (64x32)
-%    feistel_out = PBOX(input_P);
-    % Apply Reversed Pbox to the L16. This allows us to just look at the first 4 bits of the unpboxed l16 matrix
-    unpboxed_L16_for_this_trace = PBOX_R(L_16(m, :));
-    
-    first_4_unpboxed_L16 = unpboxed_L16_for_this_trace(1:4);
-    
-    first_4_unpboxed_L16_matrix = repmat(first_4_unpboxed_L16, 64, 1);
-
-    % At this point, we have 64 potential feistel outputs 32 bits wide and we wish to xor it with our L_16 to get L_15 for those bits
-   
-    L_15_guesses_for_interesting_bits = xor(sbox_guessed_outputs, first_4_unpboxed_L16_matrix);
-   
-    % Get hamming distances between L_15 guesses for the interesting bits with the ciphertext L_16. Hamming weight is xor and sum - which ultimately
-    % IS the sbox_guessed_outputs
-    HD1SBOX(m, :) = sum(sbox_guessed_outputs')';
-    %Bitposaffected = [60 62];
-    %input_r_repeate64 = ones(64,2)*diag([input_r(m,Bitposaffected-32)]);
-    %Cypherguesss2 = Cypherguesss(:,Bitposaffected);
-    %HD1SBOX(m,:)  = sum(xor(input_r_repeate64,Cypherguesss(:,Bitposaffected))');
-    %m
-end 
-    result = HD1SBOX;
+%%     input_P = [ones(64,4) zeros(64,28)];
+%    FP_INPUT = [PBOX(input_P) zeros(64, 32)];
+%    Cypherguesss = FP(FP_INPUT);
+%    Bitposaffected = [60 62];
+%    input_r_repeate64 = ones(64,2)*diag([input_r(m,Bitposaffected-32)]);
+%    Cypherguesss2 = Cypherguesss(:,Bitposaffected);
+%    HD1SBOX(m,:)  = sum(xor(input_r_repeate64,Cypherguesss(:,Bitposaffected))');
+%    m
+%end 
+%    result = HD1SBOX;
 
 end

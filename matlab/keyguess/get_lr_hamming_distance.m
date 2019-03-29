@@ -45,7 +45,7 @@ function [result] = get_lr_hamming_distance()
   % 32 bits on the right from the final crypt
 %   distances = pdist2(input_r, C(:, 1:32), 'hamming');
 %  distances = sum(xor(unpermuted_c, C)')';
-   distances = sum(xor(input_r, C(:,33:end))')';
+   distances = sum(xor(input_r, unpermuted_c(:,1:32))')';
 
   result = distances;
 
