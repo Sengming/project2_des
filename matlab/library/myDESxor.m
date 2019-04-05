@@ -114,6 +114,8 @@ end
 % 1.1 define splitting function
 HALF_L = @(message) message(1:32);
 HALF_R = @(message) message(33:64);
+HWf = @(message) sum(message);
+HDf = @(message1,message2) sum(xor(message1,message2));
 % 1.2 define expansion function
 EF = @(halfMessage) [halfMessage([32,4:4:28])',(reshape(halfMessage,4,8))',halfMessage([5:4:29,1])'];
 % 1.3 define key mixing (KM)
@@ -244,6 +246,7 @@ for i = 1:16
         case 'DEC' % if decryption, apply sub-keys in the reverse order
             mixed_R = KM(expended_R,subKeys(16-i+1,:)); % mixed with sub-key: 48-bit
      end
+     
      substituted_R = SBOX(mixed_R); % substitution: 48-bit to 32-bit
      permuted_R = PBOX(reshape(substituted_R',1,32)); % permutation: 32-bit
      R{i+1} = xor(L{i},permuted_R); % Feistel function: 32-bit
@@ -257,13 +260,15 @@ end
 % end
 C = [R{end},L{end}];
 output64 = FP(C);
-varargout{8} = sum(xor([L{end-1},R{end-1}], C));
-varargout{7} = [L{end-1},R{end-1}];
-varargout{6} = reshape(expended_R',1,48);
-varargout{5} = subKeys(i,:);
-varargout{4} = reshape(mixed_R',1,48);
-varargout{3} = reshape(substituted_R',1,32);
-varargout{2} = permuted_R;
+varargout{9} = sum(xor([L{end-1},R{end-1}], C));
+% varargout{9} = HWf(substituted_R(1,:));
+varargout{8} = [L{end-1},R{end-1}];
+varargout{7} = reshape(expended_R',1,48);
+varargout{6} = subKeys(i,:);
+varargout{5} = reshape(mixed_R,1,48);
+varargout{4} = reshape(substituted_R',1,32);
+varargout{3} = permuted_R;
+varargout{2} = C;
 varargout{1} = output64;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%                                   END                                 %%

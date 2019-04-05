@@ -38,8 +38,13 @@ load ./matfiles/MAs
 key = [0,1,1,0,1,0,1,1,0,1,1,0,0,1,0,0,0,1,1,1,1,0,0,1,0,1,1,0,1,0,1,1,0,1,1,0,0,1,0,0,0,1,1,1,1,0,0,1,0,1,1,0,1,0,1,1,0,1,1,0,0,1,0,0];
 
 for i=1:length(M)
-[C_fromDES(i,:), Round15(i,:), HD_Round16_LRUpdate(i)] = myDES(M(i,:),'ENC',key);
+[C_fromDES(i,:), C_IP(i,:), permuted_R(i,:), substituted_R(i,:),mixed_R(i,:),subKeys(i,:),expended_R(i,:),Round15(i,:),HD_Round16_LRUpdate(i)] = myDESxor(M(i,:),'ENC',key);
 end
+
+HWf = @(message) sum(message,2);
+HDf = @(message1,message2) sum(xor(message1,message2),2);
+HDf_w1 = @(A,B,w) (sum(and(A,xor(A,B)),2)*ones(size(w))+sum(xor(A,B)-and(A,xor(A,B)),2)*w); % w has to be a row vector of weights
+HDf_w2 = @(A,B,w) (sum(and(A,xor(A,B)),2) * w +sum(xor(A,B)-and(A,xor(A,B)),2)*ones(size(w)));
 
 % test_DES;
 
