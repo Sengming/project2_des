@@ -1,4 +1,4 @@
-function [result, L15s] = get_guess_lr_hamming_distance2(C,M)
+function [hamming, weighted_hamming, L15s] = get_guess_lr_hamming_distance2(C,M)
 % -------------------------------------------------------------------------
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%                   1. Cryptographical primitives                       %%
@@ -133,6 +133,8 @@ KS = @(key28,s) [key28(s+1:end),key28(1:s)];
 % 3.2 cipher round 1 to 16
 % load pairs
 
+HDf_w2 = @(A,B,w) (sum(and(A,xor(A,B)),2) * w +sum(xor(A,B)-and(A,xor(A,B)),2)*ones(size(w)));
+
 C = IP(C);
 R{2} = HALF_R(C);
 L{2} = HALF_L(C);
@@ -155,6 +157,11 @@ i = 1;
 
 % Create HDS 3d matrix for traces x guesses x sboxes
 HDS = zeros(length(C),64, 8);
+
+% Create Weighted HDS 3d matrix for traces x guesses x sboxes
+WHDS = zeros(length(C), 64, 8);
+WHDS_weight = 0.55;
+
 TempR1 = R{i};
 TempR2 = R{i+1};
 TempL1 = L{i};
@@ -175,6 +182,7 @@ TempL2 = L{i+1};
 %     clear TempL
 % %     clear expended_R 
 % end
+
 for n=1:64
     for m=1:length(C)
         expended_R = EF(TempR1(m,:)); % expended half key: 32-bit to 48-bit
@@ -183,6 +191,7 @@ for n=1:64
         permuted_R = PBOX(reshape(substituted_R',1,32)); % permutation: 32-bit
         TempL(m,:) = xor(TempL1(m,:),permuted_R); % Feistel function: 32-bit
 
+        % Regular hamming distance for each sbox
         HDS(m,n,1) = sum(xor(TempL(m,[9 17 23 31]),TempL2(m,[9 17 23 31])));
         HDS(m,n,2) = sum(xor(TempL(m,[13 28 2 18]),TempL2(m,[13 28 2 18])));
         HDS(m,n,3) = sum(xor(TempL(m,[24 16 30 6]),TempL2(m,[24 16 30 6])));
@@ -191,13 +200,25 @@ for n=1:64
         HDS(m,n,6) = sum(xor(TempL(m,[4 29 11 19]),TempL2(m,[4 29 11 19])));
         HDS(m,n,7) = sum(xor(TempL(m,[32 12 22 7]),TempL2(m,[32 12 22 7])));
         HDS(m,n,8) = sum(xor(TempL(m,[5 27 15 21]),TempL2(m,[5 27 15 21])));
+        
+        % Weighted HDS
+        WHDS(m,n,1) = HDf_w2(TempL(m,[9 17 23 31]),TempL2(m,[9 17 23 31]), WHDS_weight);
+        WHDS(m,n,2) = HDf_w2(TempL(m,[13 28 2 18]),TempL2(m,[13 28 2 18]), WHDS_weight);
+        WHDS(m,n,3) = HDf_w2(TempL(m,[24 16 30 6]),TempL2(m,[24 16 30 6]), WHDS_weight);
+        WHDS(m,n,4) = HDf_w2(TempL(m,[26 20 10 1]),TempL2(m,[26 20 10 1]), WHDS_weight);
+        WHDS(m,n,5) = HDf_w2(TempL(m,[8 14 25 3]),TempL2(m,[8 14 25 3]), WHDS_weight);
+        WHDS(m,n,6) = HDf_w2(TempL(m,[4 29 11 19]),TempL2(m,[4 29 11 19]), WHDS_weight);
+        WHDS(m,n,7) = HDf_w2(TempL(m,[32 12 22 7]),TempL2(m,[32 12 22 7]), WHDS_weight);
+        WHDS(m,n,8) = HDf_w2(TempL(m,[5 27 15 21]),TempL2(m,[5 27 15 21]), WHDS_weight);
+        
     end
     L15s{n}=TempL;
     clear TempL
 %     clear expended_R 
 end
 
-result = HDS;
+hamming = HDS;
+weighted_hamming = WHDS;
 % hamming = result;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%                                   END                                 %%
