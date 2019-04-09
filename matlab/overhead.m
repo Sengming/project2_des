@@ -58,6 +58,12 @@ end
 
 A = sum(correct_count_normal_matrix);
 B = sum(correct_count_weighted_matrix);
-figure; plot(nTraces,A./10,'.b',nTraces,B./10,'.g')
+figure; plot(nTraces,A./10,'.b',nTraces,B./10,'.g');
+ylabel('% of Correct guesses')
+xlabel('Traces Used')
+ylim([0 100])
+legend('Normal HD','Weighted HD');
+savefig(['./results/Comp_SBOX',num2str(m),'.fig'])
+saveas(gcf,['./results/Comp_SBOX',num2str(m),'.pdf'])
 
 end
