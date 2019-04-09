@@ -56,7 +56,7 @@ Limit_right = MPI + 1800;
 
 P_shifted = PT(Limit_left:Limit_right,:);
 
-P = PT';
+% P = PT';
 P = P_shifted';
 HD = HD_Round16_LRUpdate';
 
@@ -77,13 +77,16 @@ close all;
 
 disp('Getting key for 1st SBOX in round 16 ...')
 
+close all;
 
 [hamming, weighted_hamming, L15s] = get_guess_lr_hamming_distance2(C,M);
 
 % P = PT(Ind_sample,:)';
-P = P_shifted(Ind_sample,:)';
+
 
 Correct_GuessNos = [61    12    57    47    23    51    17    45];
+
+P = P_shifted(Ind_sample,:)';
 
 for num_sboxes = 1:8
     HD = hamming(:,:,num_sboxes);
@@ -103,3 +106,4 @@ for num_sboxes = 1:8
 
 end
 
+save ./matfiles/CorrData hamming weighted_hamming Ind_sample P_shifted Correct_GuessNos
