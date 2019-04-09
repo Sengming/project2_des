@@ -48,7 +48,16 @@ HDf_w2 = @(A,B,w) (sum(and(A,xor(A,B)),2) * w +sum(xor(A,B)-and(A,xor(A,B)),2)*o
 
 % test_DES;
 
+[MP,MPI] = max(SMA_PT(2000:end,:));
+MPI = MPI+1999+9;
+
+Limit_left = MPI-3050;
+Limit_right = MPI + 1800;
+
+P_shifted = PT(Limit_left:Limit_right,:);
+
 P = PT';
+P = P_shifted';
 HD = HD_Round16_LRUpdate';
 
 Gcorr = corr(HD,P);
@@ -71,7 +80,10 @@ disp('Getting key for 1st SBOX in round 16 ...')
 
 [hamming, weighted_hamming, L15s] = get_guess_lr_hamming_distance2(C,M);
 
-P = PT(Ind_sample,:)';
+% P = PT(Ind_sample,:)';
+P = P_shifted(Ind_sample,:)';
+
+Correct_GuessNos = [61    12    57    47    23    51    17    45];
 
 for num_sboxes = 1:8
     HD = hamming(:,:,num_sboxes);
@@ -83,6 +95,7 @@ for num_sboxes = 1:8
     figure; plot(Gcorr_sol)
     hold on;
     plot(Gcorr_sol_weighted)
+    plot(Correct_GuessNos(num_sboxes),Gcorr_sol_weighted(Correct_GuessNos(num_sboxes)),'+r')
     savefig(['./results/Corr_SBOX',num2str(num_sboxes),'.fig'])
     saveas(gcf,['./results/Corr_SBOX',num2str(num_sboxes),'.pdf'])
 

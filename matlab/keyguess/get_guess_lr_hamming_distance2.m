@@ -132,7 +132,9 @@ KS = @(key28,s) [key28(s+1:end),key28(1:s)];
 % end
 % 3.2 cipher round 1 to 16
 % load pairs
-
+HWf = @(message) sum(message,2);
+HDf = @(message1,message2) sum(xor(message1,message2),2);
+HDf_w1 = @(A,B,w) (sum(and(A,xor(A,B)),2)*ones(size(w))+sum(xor(A,B)-and(A,xor(A,B)),2)*w); % w has to be a row vector of weights
 HDf_w2 = @(A,B,w) (sum(and(A,xor(A,B)),2) * w +sum(xor(A,B)-and(A,xor(A,B)),2)*ones(size(w)));
 
 C = IP(C);
@@ -192,15 +194,22 @@ for n=1:64
         TempL(m,:) = xor(TempL1(m,:),permuted_R); % Feistel function: 32-bit
 
         % Regular hamming distance for each sbox
-        HDS(m,n,1) = sum(xor(TempL(m,[9 17 23 31]),TempL2(m,[9 17 23 31])));
-        HDS(m,n,2) = sum(xor(TempL(m,[13 28 2 18]),TempL2(m,[13 28 2 18])));
-        HDS(m,n,3) = sum(xor(TempL(m,[24 16 30 6]),TempL2(m,[24 16 30 6])));
-        HDS(m,n,4) = sum(xor(TempL(m,[26 20 10 1]),TempL2(m,[26 20 10 1])));
-        HDS(m,n,5) = sum(xor(TempL(m,[8 14 25 3]),TempL2(m,[8 14 25 3])));
-        HDS(m,n,6) = sum(xor(TempL(m,[4 29 11 19]),TempL2(m,[4 29 11 19])));
-        HDS(m,n,7) = sum(xor(TempL(m,[32 12 22 7]),TempL2(m,[32 12 22 7])));
-        HDS(m,n,8) = sum(xor(TempL(m,[5 27 15 21]),TempL2(m,[5 27 15 21])));
-        
+%         HDS(m,n,1) = sum(xor(TempL(m,[9 17 23 31]),TempL2(m,[9 17 23 31])));
+%         HDS(m,n,2) = sum(xor(TempL(m,[13 28 2 18]),TempL2(m,[13 28 2 18])));
+%         HDS(m,n,3) = sum(xor(TempL(m,[24 16 30 6]),TempL2(m,[24 16 30 6])));
+%         HDS(m,n,4) = sum(xor(TempL(m,[26 20 10 1]),TempL2(m,[26 20 10 1])));
+%         HDS(m,n,5) = sum(xor(TempL(m,[8 14 25 3]),TempL2(m,[8 14 25 3])));
+%         HDS(m,n,6) = sum(xor(TempL(m,[4 29 11 19]),TempL2(m,[4 29 11 19])));
+%         HDS(m,n,7) = sum(xor(TempL(m,[32 12 22 7]),TempL2(m,[32 12 22 7])));
+%         HDS(m,n,8) = sum(xor(TempL(m,[5 27 15 21]),TempL2(m,[5 27 15 21])));
+        HDS(m,n,1) = HWf(substituted_R(1,:));
+        HDS(m,n,2) = HWf(substituted_R(2,:));
+        HDS(m,n,3) = HWf(substituted_R(3,:));
+        HDS(m,n,4) = HWf(substituted_R(4,:));
+        HDS(m,n,5) = HWf(substituted_R(5,:));
+        HDS(m,n,6) = HWf(substituted_R(6,:));
+        HDS(m,n,7) = HWf(substituted_R(7,:));
+        HDS(m,n,8) = HWf(substituted_R(8,:));
         % Weighted HDS
         WHDS(m,n,1) = HDf_w2(TempL(m,[9 17 23 31]),TempL2(m,[9 17 23 31]), WHDS_weight);
         WHDS(m,n,2) = HDf_w2(TempL(m,[13 28 2 18]),TempL2(m,[13 28 2 18]), WHDS_weight);
